@@ -7,7 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>AstroRig</AssemblyName>
-    <Version>1.0.9</Version>
+    <Version>1.0.10</Version>
+    <ApplicationIcon>AstroRig.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="catalog-*.json" />

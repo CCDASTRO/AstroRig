@@ -63,7 +63,13 @@ internal static class Program
         }
 
         ApplicationConfiguration.Initialize();
-        try { Application.Run(new MainWindow()); }
+        try
+        {
+            using var icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            using var window = new MainWindow();
+            window.Icon = icon;
+            Application.Run(window);
+        }
         catch (Exception error) { MessageBox.Show(error.Message, "AstroRig", MessageBoxButtons.OK, MessageBoxIcon.Error); }
     }
 }
