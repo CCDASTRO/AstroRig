@@ -147,6 +147,11 @@ internal sealed class MainWindow : Form
         var toolbar = Bar(("Open", OpenInventory), ("Save", Save), ("Save As", SaveAs),
             ("Import AstroArmory backup", Import), ("Export Excel", Export));
         toolbar.BackColor = Color.FromArgb(223, 235, 248);
+        var help = new ToolStripDropDownButton("Help");
+        help.DropDownItems.Add("AstroRig guide", null, (_, _) => OpenHelpPage("https://github.com/CCDASTRO/AstroRig#readme"));
+        help.DropDownItems.Add("Windows releases", null, (_, _) => OpenHelpPage("https://github.com/CCDASTRO/AstroRig/releases"));
+        help.DropDownItems.Add("N.I.N.A. plugin releases", null, (_, _) => OpenHelpPage("https://github.com/CCDASTRO/AstroRig.NINA/releases"));
+        toolbar.Items.Add(help);
         Controls.Add(toolbar);
         var status = new StatusStrip { ShowItemToolTips = true };
         status.Items.Add(_status);
@@ -231,6 +236,21 @@ internal sealed class MainWindow : Form
     private static bool ValidEquipment(Equipment e) => new[] { e.WeightKg, e.PurchaseCost, e.ApertureMm, e.FocalLengthMm,
         e.FocalMultiplier, e.ImageCircleMm, e.PixelSizeUm, e.SensorWidthMm, e.SensorHeightMm, e.ResolutionX, e.ResolutionY,
         e.SpacingMm, e.RatedPayloadKg, e.ImagingTargetKg, e.RequiredBackfocusMm, e.TravelMm }.All(NonNegative) && e.FocalMultiplier > 0 && e.FilterSlotCount is >= 0 and <= 64;
+
+    private void OpenHelpPage(string address)
+    {
+        try
+        {
+            using var browser = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(address)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch (Win32Exception error)
+        {
+            Notice(error.Message);
+        }
+    }
 
     private ToolStrip Bar(params (string Title, Action Action)[] actions)
     {
