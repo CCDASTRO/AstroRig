@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 namespace AstroRig;
 
-public enum Role { Mount, Optics, MainCamera, Reducer, Filter, GuideScope, GuideCamera, TiltPlate, Focuser, Controller, Power, Tripod, Accessory }
+public enum Role { Mount, Optics, MainCamera, Reducer, Filter, GuideScope, GuideCamera, TiltPlate, Focuser, Controller, Power, Tripod, Accessory, FilterWheel }
 public enum GuideDeviceKind { GuideScope, OffAxisGuider }
 
 public sealed class Equipment
@@ -33,6 +33,9 @@ public sealed class Equipment
     [Category("Optical specs"), DisplayName("Optical design")] public string OpticalDesign { get; set; } = "";
     [Category("Optical specs"), DisplayName("Guide device type")] public GuideDeviceKind GuideDeviceType { get; set; }
     [Category("Optical specs"), DisplayName("Filter size / bandpass")] public string FilterSpecification { get; set; } = "";
+    [Category("Filter wheel"), DisplayName("Number of slots")] public int FilterSlotCount { get; set; }
+    [Browsable(false), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Dictionary<int, Guid>? FilterSlots { get; set; }
     [Category("Sensor"), DisplayName("Cooled camera")] public bool Cooled { get; set; }
     [Category("Sensor"), DisplayName("Built-in guide sensor")] public bool BuiltInGuider { get; set; }
     [Category("Connections"), DisplayName("Required backfocus (mm)")] public double RequiredBackfocusMm { get; set; }
@@ -58,7 +61,7 @@ public sealed class Assignment
         EquipmentId = item.Id,
         Role = item.Category,
         CountInPayload = item.Category is not (Role.Mount or Role.Tripod),
-        CountInBackfocus = item.Category is Role.MainCamera or Role.TiltPlate ||
+        CountInBackfocus = item.Category is Role.MainCamera or Role.TiltPlate or Role.FilterWheel ||
             item.Category == Role.GuideScope && item.GuideDeviceType == GuideDeviceKind.OffAxisGuider ||
             mainTrain && item.Category is not (Role.Optics or Role.Mount or Role.Reducer or Role.GuideScope or Role.GuideCamera)
     };
@@ -103,6 +106,26 @@ public sealed class Inventory
             File.Move(temporary, path, true);
         }
         finally { File.Delete(temporary); }
+    }
+
+    public string? FilterSlotSummary(Equipment item)
+    {
+        if (item.Category != Role.FilterWheel) return null;
+        if (item.FilterSlotCount < 1) return "Filter slot count is not set.";
+
+        var lines = new List<string>();
+        if (item.FilterSlots != null)
+        {
+            foreach (var (slot, id) in item.FilterSlots.OrderBy(pair => pair.Key))
+            {
+                if (slot < 1 || slot > item.FilterSlotCount) continue;
+                var filter = Equipment.Find(candidate => candidate.Id == id && candidate.Category == Role.Filter);
+                lines.Add($"Slot {slot}: {filter?.ToString() ?? "Filter unavailable"}");
+            }
+        }
+
+        lines.Insert(0, $"Filter slots: {lines.Count} of {item.FilterSlotCount} occupied");
+        return string.Join(Environment.NewLine, lines);
     }
 
     public IEnumerable<(Assignment Assignment, Equipment Item)> Resolve(Rig rig)

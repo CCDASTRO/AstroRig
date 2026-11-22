@@ -1,0 +1,8 @@
+[
+  { "Brand": "ZWO", "Model": "EFW-5x1.25-25", "FilterSlotCount": 5, "FilterSpecification": "1.25 in / 31 mm", "SpacingMm": 20, "WeightKg": 0.300, "PowerConnection": "USB" },
+  { "Brand": "ZWO", "Model": "EFW-8x1.25-25", "FilterSlotCount": 8, "FilterSpecification": "1.25 in / 31 mm", "SpacingMm": 20, "WeightKg": 0.530, "PowerConnection": "USB" },
+  { "Brand": "ZWO", "Model": "EFW-7x36-25", "FilterSlotCount": 7, "FilterSpecification": "36 mm unmounted", "SpacingMm": 20, "WeightKg": 0.515, "PowerConnection": "USB" },
+  { "Brand": "ZWO", "Model": "EFW-5x2-25", "FilterSlotCount": 5, "FilterSpecification": "2 in / 50 mm", "SpacingMm": 20, "WeightKg": 0.540, "PowerConnection": "USB" },
+  { "Brand": "ZWO", "Model": "EFW-7x2-25", "FilterSlotCount": 7, "FilterSpecification": "2 in / 50 mm", "SpacingMm": 20, "WeightKg": 0.720, "PowerConnection": "USB" },
+  { "Brand": "ZWO", "Model": "EFW-7x50", "FilterSlotCount": 7, "FilterSpecification": "50 mm square", "SpacingMm": 16, "WeightKg": 1.190, "PowerConnection": "USB" }
+]

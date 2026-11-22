@@ -14,6 +14,7 @@ internal static class EquipmentCatalog
             Role.MainCamera or Role.GuideCamera => "camera",
             Role.Optics or Role.GuideScope => "optics",
             Role.Filter => "filter",
+            Role.FilterWheel => "filter-wheel",
             _ => null
         };
         if (name == null) return [];
@@ -47,6 +48,8 @@ internal static class EquipmentCatalog
         item.MountType = preset.MountType;
         item.RatedPayloadKg = preset.RatedPayloadKg;
         item.FilterSpecification = preset.FilterSpecification;
+        item.FilterSlotCount = preset.FilterSlotCount;
+        if (item.Category == Role.FilterWheel) item.PowerConnection = preset.PowerConnection;
     }
 }
 

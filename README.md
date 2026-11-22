@@ -2,9 +2,15 @@
 
 AstroRig is a C# Windows desktop app for keeping one equipment inventory and assembling multiple astrophotography rigs from it.
 
+## Latest changes
+
+- Filter wheels store the filter assigned to each numbered slot. Hover over the wheel name on the **Rigs** tab to see the occupied slots and filter names.
+- The rig role dropdown handles unrecognized saved roles without interrupting the screen. Choose a supported role to replace an unrecognized value.
+- The [AstroRig plugin for N.I.N.A.](https://github.com/CCDASTRO/AstroRig.NINA) can open the same inventory and lists the filters directly in the rig table.
+
 ## Run the portable app
 
-Extract the Windows x64 ZIP to a writable parent folder and open **AstroRig\AstroRig.exe**. To update, close the app, extract the new ZIP to that same parent folder, and allow Windows to replace the files. AstroRig uses the same inventory folder as earlier Imaging Rig releases. Launch AstroRig from the new folder after closing the earlier app. Keep the **runtime** folder and the other files beside the executable. The archive includes the .NET 9 desktop runtime.
+Extract the Windows x64 ZIP to a writable parent folder and open **AstroRig\AstroRig.exe**. To update, close the app, move any inventory you saved inside the app folder to a separate location, delete the installed AstroRig folder, and extract the new ZIP into the same parent folder. AstroRig uses the same inventory folder as earlier Imaging Rig releases. Launch AstroRig from the new folder after closing the earlier app. Keep the **runtime** folder and the other files beside the executable. The archive includes the .NET 9 desktop runtime.
 
 On first launch, **Save** writes to **%LOCALAPPDATA%\ImagingRig\inventory.json**. Use **Save As** to write a separate inventory file in a folder you choose. **Save** then updates that file. Use **Open** to switch between inventories. The bottom status bar shows the active file path, and the app reopens your last inventory when it is available.
 
@@ -15,6 +21,10 @@ On first launch, **Save** writes to **%LOCALAPPDATA%\ImagingRig\inventory.json**
 3. In the rig's component list, edit each role and select whether the item counts toward payload or backfocus. Use **Move up** and **Move down** to set the order. Enter binning and target backfocus above the list. Click **Save**.
 
 Each rig uses the first component assigned to each primary role for its optical and mount calculations. Payload excludes the mount and tripod by default and reports missing component weights. Headroom uses the imaging target when supplied, or the rated mount capacity. Enter camera sensor backfocus from the sensor to its actual mounting surface, then count any separate spacers, tilt plates, or off-axis guiders in the component list. Enter a reducer's required backfocus on the reducer itself. A backfocus target entered on the rig overrides that value.
+
+## Filter wheels
+
+On **Equipment**, add each individual filter using the **Filter** type. Add a **Filter Wheel**, choose a preset or enter its model and number of slots, then select the wheel and click **Assign filters to slots**. You can also select the wheel in the rig table and use the same button there. Choose an inventory filter or **(Empty)** for each numbered slot, click **OK**, and click **Save**. The slot assignments follow the wheel when it is used in multiple rigs. If an existing wheel was entered as a **Filter**, change its **Equipment type** to **FilterWheel** and set its slot count. Slot assignments record the wheel layout. The rig checkboxes still control which assigned components contribute to payload and backfocus.
 
 ## Equipment presets
 

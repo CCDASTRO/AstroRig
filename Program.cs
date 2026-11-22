@@ -150,11 +150,27 @@ internal sealed class MainWindow : Form
         _equipmentEditor.PropertyValueChanged += (_, e) =>
         {
             if (_equipment.SelectedItem is not Equipment item) return;
+            if (e.ChangedItem?.PropertyDescriptor?.Name == nameof(Equipment.Category) &&
+                (item.FilterSlots is { Count: > 0 } || IsLoadedFilter(item.Id)))
+            {
+                e.ChangedItem.PropertyDescriptor.SetValue(item, e.OldValue);
+                ShowEquipmentFields();
+                Notice("Clear the filter wheel slots before changing this equipment type.");
+                return;
+            }
+            if (item.Category == Role.FilterWheel &&
+                item.FilterSlots?.Keys.Any(slot => slot > item.FilterSlotCount) == true)
+            {
+                e.ChangedItem?.PropertyDescriptor?.SetValue(item, e.OldValue);
+                ShowEquipmentFields();
+                Notice("Clear the occupied slots above the new slot count first.");
+                return;
+            }
             if (string.IsNullOrWhiteSpace(item.Model) || !ValidEquipment(item))
             {
                 e.ChangedItem?.PropertyDescriptor?.SetValue(item, e.OldValue);
                 ShowEquipmentFields();
-                Notice("Enter a model name and finite, non-negative specifications. Focal multiplier must be positive.");
+                Notice("Enter a model name and finite, non-negative specifications. Focal multiplier must be positive and slot count must be 0–64.");
                 return;
             }
             Changed();
@@ -186,7 +202,9 @@ internal sealed class MainWindow : Form
         {
             if (_refreshing || e.RowIndex < 0 || _components.Rows[e.RowIndex].Tag is not Assignment assignment) return;
             var row = _components.Rows[e.RowIndex];
-            if (row.Cells[1].Value is Role role) assignment.Role = role;
+            if (e.ColumnIndex == 1 && row.Cells[1].Value is string roleName &&
+                Enum.TryParse<Role>(roleName, out var role) && Enum.IsDefined(role))
+                assignment.Role = role;
             assignment.CountInPayload = row.Cells[3].Value is true;
             assignment.CountInBackfocus = row.Cells[4].Value is true;
             assignment.Notes = row.Cells[5].Value as string ?? "";
@@ -206,7 +224,7 @@ internal sealed class MainWindow : Form
         _equipment.SelectedItem is Equipment item ? new EquipmentFields(item) : null;
     private static bool ValidEquipment(Equipment e) => new[] { e.WeightKg, e.PurchaseCost, e.ApertureMm, e.FocalLengthMm,
         e.FocalMultiplier, e.ImageCircleMm, e.PixelSizeUm, e.SensorWidthMm, e.SensorHeightMm, e.ResolutionX, e.ResolutionY,
-        e.SpacingMm, e.RatedPayloadKg, e.ImagingTargetKg, e.RequiredBackfocusMm, e.TravelMm }.All(NonNegative) && e.FocalMultiplier > 0;
+        e.SpacingMm, e.RatedPayloadKg, e.ImagingTargetKg, e.RequiredBackfocusMm, e.TravelMm }.All(NonNegative) && e.FocalMultiplier > 0 && e.FilterSlotCount is >= 0 and <= 64;
 
     private ToolStrip Bar(params (string Title, Action Action)[] actions)
     {
@@ -237,7 +255,7 @@ internal sealed class MainWindow : Form
     {
         var split = Split(295);
         split.Panel1.Controls.Add(Section(_equipment, Bar(("Add equipment", AddEquipment), ("Delete", DeleteEquipment))));
-        split.Panel2.Controls.Add(_equipmentEditor);
+        split.Panel2.Controls.Add(Section(_equipmentEditor, Bar(("Assign filters to slots", () => EditFilterSlots(_equipment.SelectedItem as Equipment)))));
         return split;
     }
 
@@ -247,7 +265,9 @@ internal sealed class MainWindow : Form
         split.Panel1.Controls.Add(Section(_rigs, Bar(("Add rig", AddRig), ("Delete", DeleteRig))));
 
         _components.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Equipment", ReadOnly = true, FillWeight = 155 });
-        _components.Columns.Add(new DataGridViewComboBoxColumn { HeaderText = "Role", DataSource = Enum.GetValues<Role>(), FillWeight = 100, FlatStyle = FlatStyle.Flat });
+        var roleColumn = new DataGridViewComboBoxColumn { HeaderText = "Role", FillWeight = 100, FlatStyle = FlatStyle.Flat };
+        roleColumn.Items.AddRange(Enum.GetNames<Role>());
+        _components.Columns.Add(roleColumn);
         _components.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Weight (kg)", ReadOnly = true, FillWeight = 72 });
         _components.Columns.Add(new DataGridViewCheckBoxColumn { HeaderText = "Payload", FillWeight = 60 });
         _components.Columns.Add(new DataGridViewCheckBoxColumn { HeaderText = "Backfocus", FillWeight = 70 });
@@ -260,7 +280,7 @@ internal sealed class MainWindow : Form
         details.Controls.Add(_rigEditor, 0, 0);
         details.Controls.Add(_metrics, 0, 1);
         details.Controls.Add(Section(_components, Bar(("Assign equipment", Assign), ("Remove", RemoveAssignment),
-            ("Move up", () => MoveAssignment(-1)), ("Move down", () => MoveAssignment(1)))), 0, 2);
+            ("Move up", () => MoveAssignment(-1)), ("Move down", () => MoveAssignment(1)), ("Assign filters to slots", EditRigFilterSlots))), 0, 2);
         split.Panel2.Controls.Add(details);
         return split;
     }
@@ -301,10 +321,20 @@ internal sealed class MainWindow : Form
             if (rig != null)
                 foreach (var (assignment, item) in _inventory.Resolve(rig))
                 {
-                    var index = _components.Rows.Add(item.ToString(), assignment.Role,
+                    var index = _components.Rows.Add(item.ToString(), null!,
                         item.WeightKg > 0 ? item.WeightKg.ToString("0.###") : "", assignment.CountInPayload,
                         assignment.CountInBackfocus, assignment.Notes);
-                    _components.Rows[index].Tag = assignment;
+                    var row = _components.Rows[index];
+                    var roleCell = (DataGridViewComboBoxCell)row.Cells[1];
+                    var roleName = Enum.GetName(assignment.Role);
+                    if (roleName == null)
+                    {
+                        roleName = $"Unknown role ({(int)assignment.Role})";
+                        roleCell.Items.Add(roleName);
+                    }
+                    roleCell.Value = roleName;
+                    row.Cells[0].ToolTipText = _inventory.FilterSlotSummary(item) ?? "";
+                    row.Tag = assignment;
                     if (assignment == selected) _components.CurrentCell = _components.Rows[index].Cells[0];
                 }
             UpdateMetrics();
@@ -481,8 +511,13 @@ internal sealed class MainWindow : Form
             if (!dialog.ValidateChildren()) return;
             if (!ValidEquipment(item))
             {
-                MessageBox.Show(dialog, "Enter finite, non-negative specifications. Focal length multiplier must be positive.",
+                MessageBox.Show(dialog, "Enter finite, non-negative specifications. Focal multiplier must be positive and slot count must be 0–64.",
                     dialog.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (item.Category == Role.FilterWheel && item.FilterSlotCount == 0)
+            {
+                MessageBox.Show(dialog, "Enter the number of slots (1–64).", dialog.Text);
                 return;
             }
             item.Model = model.Text.Trim();
@@ -520,10 +555,94 @@ internal sealed class MainWindow : Form
         if (_equipment.SelectedItem is not Equipment item) return;
         if (_inventory.Rigs.Any(rig => rig.Items.Any(x => x.EquipmentId == item.Id)))
         { Notice("Remove this item from its rigs before deleting it from inventory."); return; }
+        if (IsLoadedFilter(item.Id))
+        { Notice("Clear this filter from its wheel slots before deleting it from inventory."); return; }
         if (!Confirm($"Delete {item} from inventory?")) return;
         _inventory.Equipment.Remove(item);
         Changed();
         RefreshLists(rig: SelectedRig);
+    }
+
+    private bool IsLoadedFilter(Guid id) =>
+        _inventory.Equipment.Any(wheel => wheel.FilterSlots?.ContainsValue(id) == true);
+
+    private void EditRigFilterSlots()
+    {
+        var assignment = _components.CurrentRow?.Tag as Assignment;
+        var item = _inventory.Equipment.Find(item => item.Id == assignment?.EquipmentId);
+        EditFilterSlots(item);
+    }
+
+    private void EditFilterSlots(Equipment? item)
+    {
+        if (item is not Equipment { Category: Role.FilterWheel } wheel)
+        {
+            Notice("Select a Filter Wheel first. For an older wheel listed as a Filter, change its Equipment type to FilterWheel on the Equipment tab.");
+            return;
+        }
+        if (!_inventory.Equipment.Any(filter => filter.Category == Role.Filter))
+        {
+            Notice("Add your individual filters on the Equipment tab using Add equipment → Filter, then return here to assign them.");
+            return;
+        }
+        if (wheel.FilterSlotCount is < 1 or > 64)
+        {
+            Notice("Set Number of slots to a value from 1 to 64 in the wheel's equipment details.");
+            return;
+        }
+
+        var filters = _inventory.Equipment.Where(item => item.Category == Role.Filter)
+            .OrderBy(item => item.ToString(), StringComparer.CurrentCultureIgnoreCase).ToArray();
+        using var dialog = new Form
+        {
+            Text = $"Assign filters to slots — {wheel}", StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(480, 360), MinimumSize = new Size(480, 250), Font = Font,
+            MaximizeBox = false, MinimizeBox = false
+        };
+        var slots = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false,
+            AutoScroll = true, Padding = new Padding(12)
+        };
+        var pickers = new List<ComboBox>();
+        for (var slot = 1; slot <= wheel.FilterSlotCount; slot++)
+        {
+            var row = new FlowLayoutPanel { Width = 420, Height = 32, WrapContents = false };
+            row.Controls.Add(new Label { Text = $"Slot {slot}", Width = 65, Margin = new Padding(0, 6, 0, 0) });
+            var picker = new ComboBox
+            {
+                Width = 338, DropDownStyle = ComboBoxStyle.DropDownList, AccessibleName = $"Slot {slot}"
+            };
+            picker.Items.Add("(Empty)");
+            picker.Items.AddRange(filters);
+            var loaded = wheel.FilterSlots?.GetValueOrDefault(slot);
+            var index = Array.FindIndex(filters, filter => filter.Id == loaded);
+            picker.SelectedIndex = index + 1;
+            pickers.Add(picker);
+            row.Controls.Add(picker);
+            slots.Controls.Add(row);
+        }
+        var buttons = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom, Height = 45, FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(8)
+        };
+        var cancel = new Button { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel };
+        var ok = new Button { Text = "OK", AutoSize = true, DialogResult = DialogResult.OK };
+        buttons.Controls.AddRange([cancel, ok]);
+        dialog.Controls.AddRange([slots, buttons]);
+        dialog.AcceptButton = ok;
+        dialog.CancelButton = cancel;
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        var selected = new Dictionary<int, Guid>();
+        for (var i = 0; i < pickers.Count; i++)
+            if (pickers[i].SelectedItem is Equipment filter)
+                selected.Add(i + 1, filter.Id);
+        wheel.FilterSlots = selected.Count == 0 ? null : selected;
+        Changed();
+        var selectedAssignment = _components.CurrentRow?.Tag as Assignment;
+        RefreshRig(selectedAssignment);
     }
 
     private void Assign()
