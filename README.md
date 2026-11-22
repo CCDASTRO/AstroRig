@@ -4,6 +4,8 @@ AstroRig is a C# Windows desktop app for keeping one equipment inventory and ass
 
 ## Latest changes
 
+- Hover over any equipment name on **Rigs** to see its saved specs. Filter-wheel tooltips also show the occupied slots and filter names.
+
 - Filter wheels store the filter assigned to each numbered slot. Hover over the wheel name on the **Rigs** tab to see the occupied slots and filter names.
 - The rig role dropdown handles unrecognized saved roles without interrupting the screen. Choose a supported role to replace an unrecognized value.
 - The [AstroRig plugin for N.I.N.A.](https://github.com/CCDASTRO/AstroRig.NINA) can open the same inventory and lists the filters directly in the rig table.

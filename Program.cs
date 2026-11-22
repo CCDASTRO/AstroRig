@@ -339,7 +339,7 @@ internal sealed class MainWindow : Form
                         roleCell.Items.Add(roleName);
                     }
                     roleCell.Value = roleName;
-                    row.Cells[0].ToolTipText = _inventory.FilterSlotSummary(item) ?? "";
+                    row.Cells[0].ToolTipText = EquipmentFields.SpecsTooltip(item, _inventory.FilterSlotSummary(item));
                     row.Tag = assignment;
                     if (assignment == selected) _components.CurrentCell = _components.Rows[index].Cells[0];
                 }
