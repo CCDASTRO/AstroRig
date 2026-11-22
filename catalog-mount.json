@@ -1,0 +1,25 @@
+[
+  {
+    "Brand": "Software Bisque",
+    "Model": "Paramount MX+",
+    "WeightKg": 22.68,
+    "RatedPayloadKg": 45,
+    "MountType": "German Equatorial",
+    "Notes": "Mount head weight from Bisque’s comparison chart. Counterweight shaft excluded."
+  },
+  {
+    "Brand": "ZWO",
+    "Model": "AM5N",
+    "WeightKg": 5.5,
+    "RatedPayloadKg": 15,
+    "MountType": "Strain-wave equatorial / alt-az",
+    "Notes": "15 kg without a counterweight. ZWO specifies up to 20 kg with a counterweight."
+  },
+  {
+    "Brand": "Sky-Watcher",
+    "Model": "EQ6-R Pro",
+    "RatedPayloadKg": 19.96,
+    "MountType": "German Equatorial",
+    "Notes": "Manufacturer rating of 44 lb converted to kg."
+  }
+]
