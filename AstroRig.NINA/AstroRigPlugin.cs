@@ -12,6 +12,7 @@ using NINA.WPF.Base.ViewModel;
 [assembly: Guid("b5be0195-e556-4066-86a6-f763aceb33ab")]
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.3.0.1069")]
 [assembly: AssemblyMetadata("Repository", "https://github.com/CCDASTRO/AstroRig")]
+[assembly: AssemblyMetadata("FeaturedImageURL", "https://github.com/CCDASTRO/AstroRig/releases/download/v1.0.11/AstroRig-Plugin-Icon.png")]
 
 namespace AstroRig.NinaPlugin;
 
