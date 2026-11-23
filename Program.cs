@@ -98,6 +98,7 @@ internal sealed class MainWindow : Form
     private readonly TextBox _metrics = new() { ReadOnly = true, Multiline = true, Dock = DockStyle.Fill,
         BorderStyle = BorderStyle.None, BackColor = Color.FromArgb(232, 240, 249), TabStop = false,
         ScrollBars = ScrollBars.Vertical };
+    private readonly CheckBox _showRigCost = new() { Text = "Show rig cost", Dock = DockStyle.Top, AutoSize = true };
     private readonly ToolStripStatusLabel _status = new();
     private bool _refreshing;
     private Rig? SelectedRig => _rigs.SelectedItem as Rig;
@@ -294,17 +295,21 @@ internal sealed class MainWindow : Form
         var roleColumn = new DataGridViewComboBoxColumn { HeaderText = "Role", FillWeight = 100, FlatStyle = FlatStyle.Flat };
         roleColumn.Items.AddRange(Enum.GetNames<Role>());
         _components.Columns.Add(roleColumn);
-        _components.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Weight (kg)", ReadOnly = true, FillWeight = 72 });
+        _components.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Weight (kg / lb)", ReadOnly = true, FillWeight = 110, MinimumWidth = 115 });
         _components.Columns.Add(new DataGridViewCheckBoxColumn { HeaderText = "Payload", FillWeight = 60 });
         _components.Columns.Add(new DataGridViewCheckBoxColumn { HeaderText = "Backfocus", FillWeight = 70 });
         _components.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Notes", FillWeight = 120 });
 
         var details = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
         details.RowStyles.Add(new RowStyle(SizeType.Absolute, 122));
-        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 126));
+        details.RowStyles.Add(new RowStyle(SizeType.Absolute, 170));
         details.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
         details.Controls.Add(_rigEditor, 0, 0);
-        details.Controls.Add(_metrics, 0, 1);
+        var summary = new Panel { Dock = DockStyle.Fill };
+        summary.Controls.Add(_metrics);
+        summary.Controls.Add(_showRigCost);
+        _showRigCost.CheckedChanged += (_, _) => UpdateMetrics();
+        details.Controls.Add(summary, 0, 1);
         details.Controls.Add(Section(_components, Bar(("Assign equipment", Assign), ("Remove", RemoveAssignment),
             ("Move up", () => MoveAssignment(-1)), ("Move down", () => MoveAssignment(1)), ("Assign filters to slots", EditRigFilterSlots))), 0, 2);
         split.Panel2.Controls.Add(details);
@@ -348,7 +353,7 @@ internal sealed class MainWindow : Form
                 foreach (var (assignment, item) in _inventory.Resolve(rig))
                 {
                     var index = _components.Rows.Add(item.ToString(), null!,
-                        item.WeightKg > 0 ? item.WeightKg.ToString("0.###") : "", assignment.CountInPayload,
+                        EquipmentFields.FormatWeight(item.WeightKg > 0 ? item.WeightKg : null), assignment.CountInPayload,
                         assignment.CountInBackfocus, assignment.Notes);
                     var row = _components.Rows[index];
                     var roleCell = (DataGridViewComboBoxCell)row.Cells[1];
@@ -373,14 +378,21 @@ internal sealed class MainWindow : Form
         if (SelectedRig is not Rig rig) { _metrics.Text = "Add a rig to get started."; return; }
         var v = RigMetrics.Calculate(_inventory, rig);
         string Number(double? d, string unit) => d is double value ? $"{value:0.##} {unit}".TrimEnd() : "—";
-        _metrics.Lines =
+        List<string> lines =
         [
             $"Focal length   {Number(v.FocalLength, "mm")}     ·     Focal ratio   {Number(v.FocalRatio, "")}     ·     Image scale   {Number(v.ImageScale, "arcsec/px")}",
             $"Field of view   {Number(v.WidthDegrees, "°")} × {Number(v.HeightDegrees, "°")}",
-            $"Recorded payload   {Number(v.Payload, "kg")}     ·     Rated   {Number(v.RatedPayload, "kg")}     ·     Imaging target   {Number(v.ImagingTarget, "kg")}",
-            $"Headroom to target or rating   {Number(v.Headroom, "kg")}" + (v.MissingWeights > 0 ? $"     ·     Missing weights   {v.MissingWeights}" : ""),
+            $"Recorded payload   {EquipmentFields.FormatWeight(v.Payload)}",
+            $"Rated   {EquipmentFields.FormatWeight(v.RatedPayload)}     ·     Imaging target   {EquipmentFields.FormatWeight(v.ImagingTarget)}",
+            $"Headroom to target or rating   {EquipmentFields.FormatWeight(v.Headroom)}" + (v.MissingWeights > 0 ? $"     ·     Missing weights   {v.MissingWeights}" : ""),
             $"Backfocus target   {Number(v.RequiredBackfocus, "mm")}     ·     Recorded spacing   {Number(v.Spacing, "mm")}     ·     Remaining   {Number(v.Remaining, "mm")}"
         ];
+        if (_showRigCost.Checked)
+        {
+            var cost = _inventory.RecordedRigCost(rig);
+            lines.Add(cost is double total ? $"Recorded rig cost   {total:N2}" : "Recorded rig cost   —");
+        }
+        _metrics.Lines = lines.ToArray();
     }
 
     private string? Prompt(string label)

@@ -4,6 +4,10 @@ AstroRig is a C# Windows desktop app for keeping one equipment inventory and ass
 
 ## Latest changes
 
+- Use **Show rig cost** to see the selected rig's total recorded purchase cost. Assigned equipment and loaded filters each count once.
+- Rig tables, payload summaries, and equipment tooltips show weights in both kilograms and pounds.
+- Excel exports open on the **Equipment** sheet.
+
 - The **Help** menu opens the AstroRig guide, Windows downloads, and N.I.N.A. plugin releases.
 
 - Hover over any equipment name on **Rigs** to see its saved specs. Filter-wheel tooltips also show the occupied slots and filter names.
