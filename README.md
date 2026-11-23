@@ -28,7 +28,7 @@ On first launch, **Save** writes to **%LOCALAPPDATA%\ImagingRig\inventory.json**
 2. On **Rigs**, click **Add rig**, then **Assign equipment**. Select an inventory item. You can assign the same item to several rigs and maintain its specs in one place.
 3. In the rig's component list, edit each role and select whether the item counts toward payload or backfocus. Use **Move up** and **Move down** to set the order. Enter binning and target backfocus above the list. Click **Save**.
 
-Each rig uses the first component assigned to each primary role for its optical and mount calculations. Payload excludes the mount and tripod by default and reports missing component weights. Headroom uses the imaging target when supplied, or the rated mount capacity. Enter camera sensor backfocus from the sensor to its actual mounting surface, then count any separate spacers, tilt plates, or off-axis guiders in the component list. Enter a reducer's required backfocus on the reducer itself. A backfocus target entered on the rig overrides that value.
+Each rig uses the first component assigned to each primary role for its optical and mount calculations. Payload excludes the mount and tripod by default and reports missing component weights. Headroom uses the imaging target when supplied, or the rated mount capacity. Enter camera sensor backfocus from the sensor to its actual mounting surface, then count any separate spacers, tilt plates, or off-axis guiders in the component list. Enter the required backfocus in the telescope or reducer equipment details. A rig backfocus target takes precedence, followed by the reducer requirement and then the telescope requirement.
 
 ## Filter wheels
 
