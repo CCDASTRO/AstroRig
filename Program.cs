@@ -84,7 +84,15 @@ internal sealed class MainWindow : Form
     private string _path = DefaultPath;
     private Inventory _inventory;
     private bool _dirty;
-    private readonly ListBox _equipment = new() { Dock = DockStyle.Fill };
+    private readonly TreeView _equipment = new() { Dock = DockStyle.Fill, HideSelection = false, ShowLines = false };
+    private readonly ToolStripComboBox _equipmentDisplay = new()
+    {
+        DropDownStyle = ComboBoxStyle.DropDownList,
+        AccessibleName = "Equipment display",
+        AutoSize = false,
+        Width = 115
+    };
+    private Equipment? SelectedEquipment => _equipment.SelectedNode?.Tag as Equipment;
     private readonly ListBox _rigs = new() { Dock = DockStyle.Fill };
     private readonly PropertyGrid _equipmentEditor = new() { Dock = DockStyle.Fill, ToolbarVisible = false, HelpVisible = false };
     private readonly PropertyGrid _rigEditor = new() { Dock = DockStyle.Fill, ToolbarVisible = false, HelpVisible = false };
@@ -158,10 +166,10 @@ internal sealed class MainWindow : Form
         status.Items.Add(_status);
         Controls.Add(status);
 
-        _equipment.SelectedIndexChanged += (_, _) => { if (!_refreshing) ShowEquipmentFields(); };
+        _equipment.AfterSelect += (_, _) => { if (!_refreshing) ShowEquipmentFields(); };
         _equipmentEditor.PropertyValueChanged += (_, e) =>
         {
-            if (_equipment.SelectedItem is not Equipment item) return;
+            if (SelectedEquipment is not Equipment item) return;
             if (e.ChangedItem?.PropertyDescriptor?.Name == nameof(Equipment.Category) &&
                 (item.FilterSlots is { Count: > 0 } || IsLoadedFilter(item.Id)))
             {
@@ -202,7 +210,7 @@ internal sealed class MainWindow : Form
                 return;
             }
             Changed();
-            RefreshLists(_equipment.SelectedItem as Equipment, rig);
+            RefreshLists(SelectedEquipment, rig);
         };
         _rigs.SelectedIndexChanged += (_, _) => { if (!_refreshing) RefreshRig(); };
         _components.CurrentCellDirtyStateChanged += (_, _) =>
@@ -233,7 +241,7 @@ internal sealed class MainWindow : Form
 
     private static bool NonNegative(double d) => double.IsFinite(d) && d >= 0;
     private void ShowEquipmentFields() => _equipmentEditor.SelectedObject =
-        _equipment.SelectedItem is Equipment item ? new EquipmentFields(item) : null;
+        SelectedEquipment is Equipment item ? new EquipmentFields(item) : null;
     private static bool ValidEquipment(Equipment e) => new[] { e.WeightKg, e.PurchaseCost, e.ApertureMm, e.FocalLengthMm,
         e.FocalMultiplier, e.ImageCircleMm, e.PixelSizeUm, e.SensorWidthMm, e.SensorHeightMm, e.ResolutionX, e.ResolutionY,
         e.SpacingMm, e.RatedPayloadKg, e.ImagingTargetKg, e.RequiredBackfocusMm, e.TravelMm }.All(NonNegative) && e.FocalMultiplier > 0 && e.FilterSlotCount is >= 0 and <= 64;
@@ -281,8 +289,17 @@ internal sealed class MainWindow : Form
     private Control BuildEquipmentView()
     {
         var split = Split(295);
-        split.Panel1.Controls.Add(Section(_equipment, Bar(("Add equipment", AddEquipment), ("Delete", DeleteEquipment))));
-        split.Panel2.Controls.Add(Section(_equipmentEditor, Bar(("Assign filters to slots", () => EditFilterSlots(_equipment.SelectedItem as Equipment)))));
+        var toolbar = Bar(("Add equipment", AddEquipment), ("Delete", DeleteEquipment));
+        _equipmentDisplay.Items.AddRange(["Alphabetical", "By type"]);
+        _equipmentDisplay.SelectedIndex = 0;
+        _equipmentDisplay.SelectedIndexChanged += (_, _) =>
+        {
+            RefreshEquipmentTree(SelectedEquipment);
+            ShowEquipmentFields();
+        };
+        toolbar.Items.Add(_equipmentDisplay);
+        split.Panel1.Controls.Add(Section(_equipment, toolbar));
+        split.Panel2.Controls.Add(Section(_equipmentEditor, Bar(("Assign filters to slots", () => EditFilterSlots(SelectedEquipment)))));
         return split;
     }
 
@@ -329,16 +346,65 @@ internal sealed class MainWindow : Form
         _refreshing = true;
         try
         {
-            _equipment.Items.Clear();
-            _equipment.Items.AddRange(_inventory.Equipment.OrderBy(x => x.ToString(), StringComparer.CurrentCultureIgnoreCase).ToArray());
+            RefreshEquipmentTree(item);
             _rigs.Items.Clear();
             _rigs.Items.AddRange(_inventory.Rigs.ToArray());
-            _equipment.SelectedItem = item ?? (_equipment.Items.Count > 0 ? _equipment.Items[0] : null);
             _rigs.SelectedItem = rig ?? _inventory.Rigs.FirstOrDefault();
         }
         finally { _refreshing = false; }
         ShowEquipmentFields();
         RefreshRig();
+    }
+
+    private void RefreshEquipmentTree(Equipment? selectedEquipment)
+    {
+        var byType = _equipmentDisplay.SelectedIndex == 1;
+        var collapsed = _equipment.Nodes.Cast<TreeNode>()
+            .Where(node => node.Tag is Role && !node.IsExpanded)
+            .Select(node => (Role)node.Tag!).ToHashSet();
+        var sorted = _inventory.Equipment.OrderBy(entry => entry.ToString(), StringComparer.CurrentCultureIgnoreCase);
+        var wasRefreshing = _refreshing;
+        _refreshing = true;
+        _equipment.BeginUpdate();
+        try
+        {
+            _equipment.Nodes.Clear();
+            _equipment.ShowLines = byType;
+            TreeNode? firstItem = null;
+            TreeNode? selectedItem = null;
+
+            void AddItem(TreeNodeCollection nodes, Equipment entry)
+            {
+                var node = new TreeNode(entry.ToString()) { Tag = entry };
+                nodes.Add(node);
+                firstItem ??= node;
+                if (entry == selectedEquipment) selectedItem = node;
+            }
+
+            if (byType)
+            {
+                foreach (var group in sorted.GroupBy(entry => entry.Category)
+                             .OrderBy(group => EquipmentFields.TypeLabel(group.Key), StringComparer.CurrentCultureIgnoreCase))
+                {
+                    var category = new TreeNode(EquipmentFields.TypeLabel(group.Key)) { Tag = group.Key };
+                    _equipment.Nodes.Add(category);
+                    foreach (var entry in group) AddItem(category.Nodes, entry);
+                    if (!collapsed.Contains(group.Key)) category.Expand();
+                }
+            }
+            else
+            {
+                foreach (var entry in sorted) AddItem(_equipment.Nodes, entry);
+            }
+
+            _equipment.SelectedNode = selectedItem ?? firstItem;
+            _equipment.SelectedNode?.EnsureVisible();
+        }
+        finally
+        {
+            _equipment.EndUpdate();
+            _refreshing = wasRefreshing;
+        }
     }
 
     private void RefreshRig(Assignment? selected = null)
@@ -575,7 +641,7 @@ internal sealed class MainWindow : Form
         var rig = new Rig { Name = name };
         _inventory.Rigs.Add(rig);
         Changed();
-        RefreshLists(_equipment.SelectedItem as Equipment, rig);
+        RefreshLists(SelectedEquipment, rig);
     }
 
     private bool Confirm(string message) => MessageBox.Show(this, message, Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
@@ -585,12 +651,12 @@ internal sealed class MainWindow : Form
         if (SelectedRig is not Rig rig || !Confirm($"Delete the rig {rig.Name}? Its equipment stays in inventory.")) return;
         _inventory.Rigs.Remove(rig);
         Changed();
-        RefreshLists(_equipment.SelectedItem as Equipment);
+        RefreshLists(SelectedEquipment);
     }
 
     private void DeleteEquipment()
     {
-        if (_equipment.SelectedItem is not Equipment item) return;
+        if (SelectedEquipment is not Equipment item) return;
         if (_inventory.Rigs.Any(rig => rig.Items.Any(x => x.EquipmentId == item.Id)))
         { Notice("Remove this item from its rigs before deleting it from inventory."); return; }
         if (IsLoadedFilter(item.Id))

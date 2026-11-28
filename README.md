@@ -4,6 +4,8 @@ AstroRig is a C# Windows desktop app for keeping one equipment inventory and ass
 
 ## Latest changes
 
+- In AstroRig 1.0.15, use the display dropdown on **Equipment** to switch between **Alphabetical** and collapsible **By type** groups. The selected item stays selected when you switch views.
+
 - Use **Show rig cost** to see the selected rig's total recorded purchase cost. Assigned equipment and loaded filters each count once.
 - Rig tables, payload summaries, and equipment tooltips show weights in both kilograms and pounds.
 - Excel exports open on the **Equipment** sheet.
@@ -15,6 +17,10 @@ AstroRig is a C# Windows desktop app for keeping one equipment inventory and ass
 - Filter wheels store the filter assigned to each numbered slot. Hover over the wheel name on the **Rigs** tab to see the occupied slots and filter names.
 - The rig role dropdown handles unrecognized saved roles without interrupting the screen. Choose a supported role to replace an unrecognized value.
 - The [AstroRig plugin for N.I.N.A.](https://github.com/CCDASTRO/AstroRig.NINA) can open the same inventory and lists the filters directly in the rig table.
+
+## Install on Windows
+
+Download the Windows x64 setup from [GitHub Releases](https://github.com/CCDASTRO/AstroRig/releases), close AstroRig if it is open, and run setup. The installer includes the .NET 9 desktop runtime and installs for the current user by default.
 
 ## Run the portable app
 

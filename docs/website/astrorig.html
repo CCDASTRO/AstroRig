@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Download AstroRig for Windows and learn how to manage astrophotography equipment, build rigs, and share an inventory with N.I.N.A.">
+  <title>AstroRig downloads and guide | CCDASTRO</title>
+  <style>
+    :root { color-scheme: dark; background: #101c25; color: #f6f3e9; font: 16px/1.6 system-ui, sans-serif; }
+    body { margin: 0; }
+    main { max-width: 56rem; margin: auto; padding: clamp(1.25rem, 4vw, 3rem); }
+    header { margin-bottom: 2rem; }
+    h1 { font-size: clamp(2.5rem, 8vw, 4rem); line-height: 1.05; margin: 1.25rem 0 0.5rem; }
+    h2, h3 { line-height: 1.2; }
+    h2 { margin-top: 0; }
+    section { background: #172630; border: 1px solid #ffffff26; border-radius: .75rem; padding: clamp(1rem, 3vw, 1.75rem); margin: 1rem 0; }
+    a { color: #dec190; text-underline-offset: .2em; }
+    a:focus-visible { outline: 2px solid #f6f3e9; outline-offset: 4px; }
+    .download { display: inline-block; background: #dec190; color: #101c25; border-radius: .4rem; padding: .65rem 1rem; font-weight: 700; }
+    .download:hover { background: #f4d9a5; }
+    .details { color: #c0cdd2; }
+    nav { display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; }
+    dt { font-weight: 700; margin-top: .75rem; }
+    dd { margin-left: 0; }
+    li + li { margin-top: .45rem; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <a href="index.html#software">← CCDASTRO software</a>
+      <h1>AstroRig</h1>
+      <p>Keep one astrophotography equipment inventory, build multiple imaging rigs, and see how much they weigh, cost, and contribute to backfocus.</p>
+      <a class="download" href="https://github.com/CCDASTRO/AstroRig/releases/download/v1.0.15/AstroRig-1.0.15-win-x64-setup.exe">Download AstroRig 1.0.15 for Windows x64</a>
+      <p class="details">Unsigned Inno Setup prerelease. Includes the .NET desktop runtime. <a href="https://github.com/CCDASTRO/AstroRig/releases/tag/v1.0.15">Release notes</a></p>
+      <nav aria-label="Guide sections">
+        <a href="#install">Install</a><a href="#files">Find your files</a><a href="#rigs">Build a rig</a>
+        <a href="#filters">Filter wheels</a><a href="#export">Import and export</a><a href="#equipment-view">Equipment display</a>
+      <a href="#nina">N.I.N.A.</a>
+      </nav>
+    </header>
+    <section id="install">
+      <h2>Install or update</h2>
+      <ol>
+        <li>Close AstroRig if it is running, then run the Windows installer. The default installation is for the current user.</li>
+        <li>Open <strong>AstroRig</strong> from the Start menu. Setup also offers a desktop shortcut.</li>
+        <li>When upgrading, reuse the existing install directory. If you previously used a portable copy, use <strong>Open</strong> in the installed app to choose your inventory if it does not reopen automatically.</li>
+      </ol>
+    </section>
+    <section id="files">
+      <h2>Find and back up your files</h2>
+      <p>Paste any of these paths into File Explorer’s address bar. The app’s bottom status bar shows the full path to the inventory you’re currently using.</p>
+      <dl>
+        <dt>Installed application</dt><dd><code>%LOCALAPPDATA%\Programs\AstroRig\AstroRig.exe</code></dd>
+        <dt>Default inventory</dt><dd><code>%LOCALAPPDATA%\ImagingRig\inventory.json</code>. AstroRig creates it on the first save to that path.</dd>
+        <dt>Inventory saved elsewhere</dt><dd><strong>Open</strong> selects an existing JSON file. <strong>Save As</strong> creates a separate file and makes it the active inventory. <strong>Save</strong> writes to the active file.</dd>
+        <dt>Last opened inventory</dt><dd><code>%LOCALAPPDATA%\ImagingRig\last-inventory.txt</code> stores the path to reopen. The N.I.N.A. plugin keeps its own path in <code>nina-last-inventory.txt</code> in the same folder.</dd>
+        <dt>Excel workbook</dt><dd><strong>Export Excel</strong> saves an <code>.xlsx</code> wherever you choose.</dd>
+      </dl>
+      <p>Save your edits and copy the active JSON file to back up your inventory. If that file lives inside an old portable app folder, move a copy to a safe location before removing the old folder.</p>
+    </section>
+    <section id="rigs">
+      <h2>Add equipment and build a rig</h2>
+      <ol>
+        <li>Open <strong>Equipment → Add equipment</strong>, choose a type, and enter the model and specs. You can use an optional preset and fill in the details for your hardware. Enter weights in kilograms.</li>
+        <li>Open <strong>Rigs → Add rig</strong> and use <strong>Assign equipment</strong> to add items. Set each component’s role, payload and backfocus checkboxes, and order. Enter sensor binning and save.</li>
+        <li>Read the rig summary or hover over an equipment name for its saved specs. Select <strong>Show rig cost</strong> to total the recorded purchase prices of assigned equipment and loaded filters, counting each item once.</li>
+      </ol>
+      <h3>Read the rig summary</h3>
+      <ul>
+        <li><strong>Image scale and field of view</strong> use the saved camera and optical specs. The first item assigned to each primary role supplies the specs.</li>
+        <li><strong>Payload and headroom</strong> show kilograms and pounds. Payload sums checked components, excluding the mount and tripod by default. Headroom uses the mount’s imaging target when supplied, or its rated capacity.</li>
+        <li><strong>Backfocus</strong> uses a positive rig override first, then the reducer’s requirement, then the telescope’s requirement. Use the camera’s sensor-to-mounting-surface distance and the spacing of other checked components. Zero remaining matches the target. A negative value means the recorded train is too long.</li>
+      </ul>
+    </section>
+    <section id="filters">
+      <h2>Assign filter-wheel slots</h2>
+      <p>Add each filter separately as <strong>Filter</strong>, then add a <strong>Filter Wheel</strong> and set the number of slots. Select the wheel and click <strong>Assign filters to slots</strong>. Choose a filter or <strong>(Empty)</strong> for each slot and save. Hover over the wheel name in standalone AstroRig to see occupied slots. N.I.N.A. lists them directly in its rig table.</p>
+    </section>
+    <section id="export">
+      <h2>Import and export</h2>
+      <p><strong>Import AstroArmory backup</strong> reads equipment, supported specs, and rig assignments from a SQLite <code>.db</code> file. Check the imported specs against your hardware. Reimporting the same file adds duplicate records.</p>
+      <p><strong>Export Excel</strong> creates a filterable workbook with <strong>Equipment</strong>, <strong>Rigs</strong>, and <strong>Rig Components</strong>. It opens directly on <strong>Equipment</strong>.</p>
+    </section>
+    <section id="equipment-view">
+      <h2>Choose how to display equipment</h2>
+      <p>In AstroRig for Windows, open <strong>Equipment</strong> and choose <strong>Alphabetical</strong> for one A–Z list or <strong>By type</strong> for collapsible groups such as Focuser, Mount, and Filter.</p>
+    </section>
+
+    <section id="nina">
+      <h2>Use AstroRig in N.I.N.A.</h2>
+      <p>In the AstroRig imaging panel, choose <strong>Rig order</strong>, <strong>Alphabetical</strong>, or <strong>By type</strong> beside the rig selector.</p>
+      <p>To install or update from the catalog when your version is listed, open <strong>Plugins</strong> in N.I.N.A. The manual download is also available below.</p>
+      <ol>
+        <li><a href="https://github.com/CCDASTRO/AstroRig.NINA/releases/download/v1.0.6/AstroRig-NINA-1.0.6.zip">Download the AstroRig 1.0.6 plugin ZIP</a>. It targets the N.I.N.A. 3.3.0.1069 nightly plugin API.</li>
+        <li>Close N.I.N.A., then extract the ZIP contents into <code>%LOCALAPPDATA%\NINA\Plugins\3.0.0\AstroRig</code>. Restart N.I.N.A., check <strong>Plugins → Installed</strong>, and open <strong>AstroRig</strong> from the Imaging panel selector.</li>
+        <li>Use <strong>Open inventory</strong> and choose the same JSON file as standalone AstroRig. After saving changes in standalone, click <strong>Reload</strong> in N.I.N.A. After editing in N.I.N.A., reopen the JSON in standalone before saving there.</li>
+      </ol>
+      <p><a href="https://github.com/CCDASTRO/AstroRig.NINA#readme">N.I.N.A. plugin guide</a> · <a href="https://github.com/CCDASTRO/AstroRig#readme">Standalone README and source</a></p>
+    </section>
+    <footer><p><a href="https://www.facebook.com/chuck.faranda">Chuck Faranda on Facebook ↗</a></p></footer>
+  </main>
+</body>
+</html>
